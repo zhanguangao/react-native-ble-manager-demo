@@ -75,7 +75,7 @@ export default class BleModule{
         }
     }
 
-    /** 连接蓝牙并打开通知 */
+    /** 连接蓝牙并打开通知 3.2.1版本 */
     connectAndNotify(id){        
 	    this.isConnecting = true;  //当前蓝牙正在连接中
         return new Promise( (resolve, reject) =>{
@@ -107,6 +107,44 @@ export default class BleModule{
 	            });
         });
     }
+
+    /** 连接蓝牙并打开通知，最新版本 */
+    connectAndNotify_latest(id){        
+        this.isConnecting = true;  //当前蓝牙正在连接中
+        return new Promise( (resolve, reject) =>{
+            BleManager.connect(id)
+                .then( () => {
+                    console.log('Connected');
+                    return BleManager.retrieveServices(id)                  
+                }).then( (peripheralInfo)=>{
+                    console.log('Connected peripheralInfo: ', peripheralInfo);                    
+                    this.peripheralId = peripheralInfo.id;
+                    this.getUUID(peripheralInfo);                   
+                    if(this.nofityServiceUUID.length == 4 || this.nofityServiceUUID.length != 36 ||
+                        this.nofityServiceUUID == '' || this.nofityCharacteristicUUID == '' || 
+                        this.writeServiceUUID == '' ||this.writeCharacteristicUUID == ''){
+                            return 'invalid';
+                    }
+                    return BleManager.startNotification(this.peripheralId, this.nofityServiceUUID, this.nofityCharacteristicUUID)
+
+                }).then((status) => {
+                    this.isConnecting = false;   //当前蓝牙连接结束    
+                    if(status == 'invalid'){
+                        console.log('Notification error');  //连接成功但不能打开通知监听            
+                        // this.disconnect();  // 断开当前连接
+                        reject(status);
+                    }else{                                 
+                        console.log('Notification started');
+                        resolve();
+                    }           
+                }).catch((error) => {
+                    console.log('Connected and Notification error:',error);
+                    this.isConnecting = false;  //当前蓝牙连接结束
+                    reject(error);
+                });
+        });
+    }
+
 
     /** 连接蓝牙  Attempts to connect to a peripheral. */
     connect(id) {
