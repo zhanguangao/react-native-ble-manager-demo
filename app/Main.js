@@ -7,12 +7,11 @@ import {
     FlatList,
     ScrollView,
     Platform,
-    NativeAppEventEmitter,
     TextInput,
     Dimensions,
 } from 'react-native'
-import BleManager from './BleManager';
-global.BluetoothManager = new BleManager();  //确保全局只有一个BleManager实例
+import BleModule from './BleModule';
+global.BluetoothManager = new BleModule();  //确保全局只有一个BleManager实例
 
 export default class App extends Component {
     constructor(props) {
@@ -29,11 +28,11 @@ export default class App extends Component {
         this.deviceList = [];     
         this.deviceMap = new Map();  
     }
-
-    componentWillMount(){
-        BluetoothManager.start()  //初始化         
+    
+    componentDidMount(){
+        BluetoothManager.start();  //初始化         
 	    //蓝牙状态改变 The BLE change state.
-	    this.BleManagerDidUpdateStateListener = NativeAppEventEmitter.addListener('BleManagerDidUpdateState', (args) => {
+	    this.BleManagerDidUpdateStateListener = BluetoothManager.addListener('BleManagerDidUpdateState', (args) => {
             console.log('BleManagerDidUpdateStatea:', args);
             BluetoothManager.bluetoothState = args.state;  
             if(args.state == 'on'){  //蓝牙打开时自动搜索
@@ -42,7 +41,7 @@ export default class App extends Component {
 	    });
 
 	    //通知接收到蓝牙发送过来的新数据  A characteristic notify a new value.
-	    this.BleManagerDidUpdateValueForCharacteristicListener = NativeAppEventEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', (data) => {
+	    this.BleManagerDidUpdateValueForCharacteristicListener = BluetoothManager.addListener('BleManagerDidUpdateValueForCharacteristic', (data) => {
              //ios接收到的是小写的16进制，android接收的是大写的16进制，统一转化为大写16进制
             let value = data.value.toUpperCase();	
             this.bluetoothRreceiveData.push(value);			
@@ -51,18 +50,18 @@ export default class App extends Component {
 	    });
 
 	    //蓝牙设备已连接 A peripheral was connected.
-	    this.BleManagerConnectPeripheralListener = NativeAppEventEmitter.addListener('BleManagerConnectPeripheral', (args) => {
+	    this.BleManagerConnectPeripheralListener = BluetoothManager.addListener('BleManagerConnectPeripheral', (args) => {
 		    console.log('BleManagerConnectPeripheral:', args);           
 	    });
 
 	    //蓝牙设备已断开连接 A peripheral was disconnected.
-	    this.BleManagerDisconnectPeripheralListener = NativeAppEventEmitter.addListener('BleManagerDisconnectPeripheral', (args) => {
+	    this.BleManagerDisconnectPeripheralListener = BluetoothManager.addListener('BleManagerDisconnectPeripheral', (args) => {
 		    console.log('BleManagerDisconnectPeripheral:', args);
             this.setState({isConnected:false});
 	    });
 
         //搜索到一个新设备监听
-        NativeAppEventEmitter.addListener('BleManagerDiscoverPeripheral', (data) => {
+        BluetoothManager.addListener('BleManagerDiscoverPeripheral', (data) => {
             // console.log('BleManagerDiscoverPeripheral:', data);
             console.log(data.id,data.name);
             let id;  //蓝牙连接id
@@ -80,7 +79,7 @@ export default class App extends Component {
         });
 
         //扫描结束监听 The scanning for peripherals is ended.
-	    this.BleManagerStopScanListener = NativeAppEventEmitter.addListener('BleManagerStopScan', () => {
+	    this.BleManagerStopScanListener = BluetoothManager.addListener('BleManagerStopScan', () => {
 		    console.log('BleManagerStopScan:','Scanning is stopped');
             this.setState({scaning:false});
 	    });	    
