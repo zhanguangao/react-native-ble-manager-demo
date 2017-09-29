@@ -57,7 +57,7 @@ export default class BleModule{
     }
 
     /** 
-     * 扫描可用设备 
+     * 扫描可用设备，5秒后结束 
      * Scan for availables peripherals. 
      * */
     scan() {
@@ -122,7 +122,7 @@ export default class BleModule{
         this.nofityCharacteristicUUID = [];  
     }
 
-    //获取通知和写数据的serviceUUID和characteristicUUID
+    //获取Notify、Read、Write、WriteWithoutResponse的serviceUUID和characteristicUUID
     getUUID(peripheralInfo){       
         this.readServiceUUID = [];
         this.readCharacteristicUUID = [];   
@@ -266,11 +266,11 @@ export default class BleModule{
      * */
 	write(data,index = 0) {
         // data = this.addProtocol(data);        
-        data = stringToBytes(data);
+        data = stringToBytes(data);        
         return new Promise( (resolve, reject) =>{
             BleManager.write(this.peripheralId, this.writeWithResponseServiceUUID[index], this.writeWithResponseCharacteristicUUID[index], data)
                 .then(() => {
-                    console.log('Write success: ',data);
+                    console.log('Write success: ',data.toString());
                     resolve();
                 })
                 .catch((error) => {
@@ -457,7 +457,8 @@ export default class BleModule{
       * */
     getMacAddressFromIOS(data){
         let macAddressInAdvertising = data.advertising.kCBAdvDataManufacturerMacAddress;
-        if(!macAddressInAdvertising){  //为undefined代表此蓝牙广播信息里不包括Mac地址
+        //为undefined代表此蓝牙广播信息里不包括Mac地址
+        if(!macAddressInAdvertising){  
             return;
         }
         macAddressInAdvertising = macAddressInAdvertising.replace("<","").replace(">","").replace(" ","");

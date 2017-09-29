@@ -9,7 +9,6 @@ import {
     TextInput,
     Dimensions,
     Alert,
-    KeyboardAvoidingView
 } from 'react-native'
 import BleModule from './BleModule';
 
@@ -80,7 +79,7 @@ export default class Main extends Component {
             macAddress = data.id;
             id = macAddress;
         }else{  
-            //ios连接时不需要用到Mac地址，但跨平台绑定设备时可能需要Mac地址
+            //ios连接时不需要用到Mac地址，但跨平台识别是否是同一设备时需要Mac地址
             //如果广播携带有Mac地址，ios可通过广播0x18获取蓝牙Mac地址，
             macAddress = BluetoothManager.getMacAddressFromIOS(data);
             id = data.id;
@@ -167,6 +166,7 @@ export default class Main extends Component {
 
                 })
         }else{
+            BluetoothManager.checkState();
             if(Platform.OS == 'ios'){
                 this.alert('请开启手机蓝牙');
             }else{
@@ -238,8 +238,8 @@ export default class Main extends Component {
 
     notify=(index)=>{
         BluetoothManager.startNotification(index)
-            .then(data=>{
-                this.setState({readData:data});
+            .then(()=>{
+                this.alert('开启成功');
             })
             .catch(err=>{
                 this.alert('开启失败');
@@ -286,11 +286,10 @@ export default class Main extends Component {
             <View>
                 {this.state.isConnected?
                     <View>
-                    {this.renderReceiveView('读取的数据：','读取',BluetoothManager.readCharacteristicUUID,this.read,this.state.readData)}
-                    {this.renderReceiveView('通知监听接收的数据：','开启通知',BluetoothManager.nofityCharacteristicUUID,this.notify,this.state.receiveData)}
-
                     {this.renderWriteView('写数据(write)：','发送',BluetoothManager.writeWithResponseCharacteristicUUID,this.write,this.state.writeData)}
                     {this.renderWriteView('写数据(writeWithoutResponse)：','发送',BluetoothManager.writeWithoutResponseCharacteristicUUID,this.writeWithoutResponse,this.state.writeData)}
+                    {this.renderReceiveView('读取的数据：','读取',BluetoothManager.readCharacteristicUUID,this.read,this.state.readData)}
+                    {this.renderReceiveView('通知监听接收的数据：','开启通知',BluetoothManager.nofityCharacteristicUUID,this.notify,this.state.receiveData)}
 
                     </View>                   
                     : <View></View>
