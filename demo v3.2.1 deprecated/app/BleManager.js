@@ -1,5 +1,7 @@
 /**
- * Created by guang on 2016/11/21.
+ * /**
+ * 本文件代码是基于3.2.1版本写的，已弃用，没删除只是为了记录
+ * 
  */
 import {
     NativeAppEventEmitter,
