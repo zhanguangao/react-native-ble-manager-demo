@@ -6,7 +6,7 @@ import {
     NativeModules,
     NativeEventEmitter
 } from 'react-native';
-
+import { stringToBytes,bytesToString } from 'convert-string';
 import BleManager from 'react-native-ble-manager';
 
 const BleManagerModule = NativeModules.BleManager;
@@ -16,7 +16,8 @@ const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 export default class BleModule{
     constructor(){
 	    this.isConnecting = false;  //蓝牙是否连接
-	    this.bluetoothState = 'off';   //蓝牙打开状态	  
+        this.bluetoothState = 'off';   //蓝牙打开状态	  
+        this.initUUID();
     }
 
     /** 
@@ -25,7 +26,7 @@ export default class BleModule{
      * BleManagerStopScan：扫描结束监听
      * BleManagerDiscoverPeripheral：扫描到一个新设备
      * BleManagerDidUpdateState：蓝牙状态改变
-     * BleManagerDidUpdateValueForCharacteristic：通知接收到蓝牙发送过来的新数据
+     * BleManagerDidUpdateValueForCharacteristic：接收到新数据
      * BleManagerConnectPeripheral：蓝牙设备已连接
      * BleManagerDisconnectPeripheral：蓝牙设备已断开连接
      * */
@@ -102,61 +103,85 @@ export default class BleModule{
         });
     }   
 
-    //获取通知和写数据的serviceUUID和characteristicUUID
-    getUUID(peripheralInfo){
-        this.nofityServiceUUID = '';
-        this.nofityCharacteristicUUID = '';
-        this.writeServiceUUID = '';
-        this.writeCharacteristicUUID = '';
-        for(let item of peripheralInfo.characteristics){
-            if(JSON.stringify(item.properties) == JSON.stringify({ Notify: 'Notify' })){
-                this.nofityServiceUUID = item.service;
-                this.nofityCharacteristicUUID = item.characteristic;
-                // console.log('Notify:',item)
-            }
-            if(JSON.stringify(item.properties) == JSON.stringify({ WriteWithoutResponse: 'WriteWithoutResponse' })){
-                this.writeServiceUUID = item.service;
-                this.writeCharacteristicUUID = item.characteristic;
-                // console.log('WriteWithoutResponse:',item)
-            }
+    //检验UUID是否可用
+    checkUUID(uuid){
+        if(uuid == '' || uuid.length == 4 || uuid.length != 36){
+            return false;
         }
+        return true;
     }
 
-    /** 连接蓝牙并打开通知，最新版本 */
-    connectAndNotify(id){        
-        this.isConnecting = true;  //当前蓝牙正在连接中
-        return new Promise( (resolve, reject) =>{
-            BleManager.connect(id)
-                .then( () => {
-                    console.log('Connected');
-                    return BleManager.retrieveServices(id)                  
-                }).then( (peripheralInfo)=>{
-                    console.log('Connected peripheralInfo: ', peripheralInfo);                    
-                    this.peripheralId = peripheralInfo.id;
-                    this.getUUID(peripheralInfo);                   
-                    if(this.nofityServiceUUID.length == 4 || this.nofityServiceUUID.length != 36 ||
-                        this.nofityServiceUUID == '' || this.nofityCharacteristicUUID == '' || 
-                        this.writeServiceUUID == '' ||this.writeCharacteristicUUID == ''){
-                            return 'invalid';
-                    }
-                    return BleManager.startNotification(this.peripheralId, this.nofityServiceUUID, this.nofityCharacteristicUUID)
+    initUUID(){
+        this.readServiceUUID = [];
+        this.readCharacteristicUUID = [];   
+        this.writeWithResponseServiceUUID = [];
+        this.writeWithResponseCharacteristicUUID = [];
+        this.writeWithoutResponseServiceUUID = [];
+        this.writeWithoutResponseCharacteristicUUID = [];
+        this.nofityServiceUUID = [];
+        this.nofityCharacteristicUUID = [];  
+    }
 
-                }).then((status) => {
-                    this.isConnecting = false;   //当前蓝牙连接结束    
-                    if(status == 'invalid'){
-                        console.log('Notification error');  //连接成功但不能打开通知监听            
-                        // this.disconnect();  // 断开当前连接
-                        reject(status);
-                    }else{                                 
-                        console.log('Notification started');
-                        resolve();
-                    }           
-                }).catch((error) => {
-                    console.log('Connected and Notification error:',error);
-                    this.isConnecting = false;  //当前蓝牙连接结束
-                    reject(error);
-                });
-        });
+    //获取通知和写数据的serviceUUID和characteristicUUID
+    getUUID(peripheralInfo){       
+        this.readServiceUUID = [];
+        this.readCharacteristicUUID = [];   
+        this.writeWithResponseServiceUUID = [];
+        this.writeWithResponseCharacteristicUUID = [];
+        this.writeWithoutResponseServiceUUID = [];
+        this.writeWithoutResponseCharacteristicUUID = [];
+        this.nofityServiceUUID = [];
+        this.nofityCharacteristicUUID = [];  
+        for(let item of peripheralInfo.characteristics){            
+            if(this.checkUUID(item.characteristic) && this.checkUUID(item.service)){
+                if(Platform.OS == 'android'){  
+                    if(item.properties.Notify == 'Notify'){
+                        this.nofityServiceUUID.push(item.service);
+                        this.nofityCharacteristicUUID.push(item.characteristic);
+                    }
+                    if(item.properties.Write == 'Write'){
+                        this.writeWithResponseServiceUUID.push(item.service);
+                        this.writeWithResponseCharacteristicUUID.push(item.characteristic);
+                    }
+                    if(item.properties.Write == 'WriteWithoutResponse'){
+                        this.writeWithoutResponseServiceUUID.push(item.service);
+                        this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
+                    }
+                    if(item.properties.Read == 'Read'){
+                        this.readServiceUUID.push(item.service);
+                        this.readCharacteristicUUID.push(item.characteristic);
+                    }
+                }else{  //ios
+                    for(let property of item.properties){
+                        if(property == 'Notify'){
+                            this.nofityServiceUUID.push(item.service);
+                            this.nofityCharacteristicUUID.push(item.characteristic);
+                        }
+                        if(property == 'Write'){
+                            this.writeWithResponseServiceUUID.push(item.service);
+                            this.writeWithResponseCharacteristicUUID.push(item.characteristic);
+                        }
+                        if(property == 'WriteWithoutResponse'){
+                            this.writeWithoutResponseServiceUUID.push(item.service);
+                            this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
+                        }
+                        if(property == 'Read'){
+                            this.readServiceUUID.push(item.service);
+                            this.readCharacteristicUUID.push(item.characteristic);
+                        }
+                    }
+                }
+               
+            }
+        }
+        console.log('readServiceUUID',this.readServiceUUID);
+        console.log('readCharacteristicUUID',this.readCharacteristicUUID);
+        console.log('writeWithResponseServiceUUID',this.writeWithResponseServiceUUID);
+        console.log('writeWithResponseCharacteristicUUID',this.writeWithResponseCharacteristicUUID);
+        console.log('writeWithoutResponseServiceUUID',this.writeWithoutResponseServiceUUID);
+        console.log('writeWithoutResponseCharacteristicUUID',this.writeWithoutResponseCharacteristicUUID);
+        console.log('nofityServiceUUID',this.nofityServiceUUID);
+        console.log('nofityCharacteristicUUID',this.nofityCharacteristicUUID);  
     }
 
     /** 
@@ -164,14 +189,23 @@ export default class BleModule{
      * Attempts to connect to a peripheral. 
      * */
     connect(id) {
+        this.isConnecting = true;  //当前蓝牙正在连接中
         return new Promise( (resolve, reject) =>{
             BleManager.connect(id)
                 .then(() => {
                     console.log('Connected success.');
-                    resolve();
+                    return BleManager.retrieveServices(id);                    
                 })
-                .catch((error) => {
+                .then((peripheralInfo)=>{
+                    console.log('Connected peripheralInfo: ', peripheralInfo);                    
+                    this.peripheralId = peripheralInfo.id;
+                    this.getUUID(peripheralInfo);  
+                    this.isConnecting = false;   //当前蓝牙连接结束  
+                    resolve(peripheralInfo);
+                })
+                .catch(error=>{
                     console.log('Connected error:',error);
+                    this.isConnecting = false;   //当前蓝牙连接结束  
                     reject(error);
                 });
         });
@@ -195,9 +229,9 @@ export default class BleModule{
      * 打开通知  
      * Start the notification on the specified characteristic.  
      * */
-    startNotification() {
+    startNotification(index = 0) {
         return new Promise( (resolve, reject) =>{
-            BleManager.startNotification(this.peripheralId, this.nofityServiceUUID, this.nofityCharacteristicUUID)
+            BleManager.startNotification(this.peripheralId, this.nofityServiceUUID[index], this.nofityCharacteristicUUID[index])
                 .then(() => {
                     console.log('Notification started');
                     resolve();
@@ -213,8 +247,8 @@ export default class BleModule{
      * 关闭通知  
      * Stop the notification on the specified characteristic. 
      * */
-    stopNotification() { 
-        BleManager.stopNotification(this.peripheralId, this.nofityServiceUUID, this.nofityCharacteristicUUID)
+    stopNotification(index = 0) { 
+        BleManager.stopNotification(this.peripheralId, this.nofityServiceUUID[index], this.nofityCharacteristicUUID[index])
             .then(() => {
                 console.log('stopNotification success!');
                 resolve();
@@ -226,15 +260,15 @@ export default class BleModule{
     }
 
 	/** 
-     * 写数据到蓝牙，没有响应 
+     * 写数据到蓝牙
      * 参数：(peripheralId, serviceUUID, characteristicUUID, data, maxByteSize)
-     * Write with response to the specified characteristic. 
+     * Write with response to the specified characteristic, you need to call retrieveServices method before. 
      * */
-	write(value) {
-		// var data = this.addProtocol(value);
-		var data = value;
+	write(data,index = 0) {
+        // data = this.addProtocol(data);        
+        data = stringToBytes(data);
         return new Promise( (resolve, reject) =>{
-            BleManager.writeWithoutResponse(this.peripheralId, this.writeServiceUUID, this.writeCharacteristicUUID, data)
+            BleManager.write(this.peripheralId, this.writeWithResponseServiceUUID[index], this.writeWithResponseCharacteristicUUID[index], data)
                 .then(() => {
                     console.log('Write success: ',data);
                     resolve();
@@ -243,31 +277,40 @@ export default class BleModule{
                     console.log('Write  failed: ',data);
                     reject(error);
                 });
-        });
+        });       
+    }
 
-        // return new Promise( (resolve, reject) =>{
-        //     BleManager.write(this.peripheralId, this.writeServiceUUID, this.writeCharacteristicUUID, data)
-        //         .then(() => {
-        //             console.log('Write success: ',data);
-        //             resolve();
-        //         })
-        //         .catch((error) => {
-        //             console.log('Write  failed: ',data);
-        //             reject(error);
-        //         });
-        // });		
+    /** 
+     * 写数据到蓝牙，没有响应 
+     * 参数：(peripheralId, serviceUUID, characteristicUUID, data, maxByteSize)
+     * Write without response to the specified characteristic, you need to call retrieveServices method before.  
+     * */
+    writeWithoutResponse(data,index = 0){
+        // data = this.addProtocol(data);   
+        data = stringToBytes(data);
+        return new Promise( (resolve, reject) =>{
+            BleManager.writeWithoutResponse(this.peripheralId, this.writeWithoutResponseServiceUUID[index], this.writeWithoutResponseCharacteristicUUID[index], data)
+                .then(() => {
+                    console.log('Write success: ',data);
+                    resolve();
+                })
+                .catch((error) => {
+                    console.log('Write  failed: ',data);
+                    reject(error);
+                });
+        });		
     }
     
     /** 
      * 读取数据  
      * Read the current value of the specified characteristic, you need to call retrieveServices method before
      * */
-    read(){
+    read(index = 0){
         return new Promise( (resolve, reject) =>{
-            BleManager.read(this.peripheralId, this.readServiceUUID, this.readCharacteristicUUID)
-                .then((readData) => {
-                    console.log('Read: ' + readData);
-                    resolve(readData);
+            BleManager.read(this.peripheralId, this.readServiceUUID[index], this.readCharacteristicUUID[index])
+                .then((data) => {
+                    console.log('Read: ',data);                    
+                    resolve(data);
                 })
                 .catch((error) => {
                     console.log(error);
@@ -414,6 +457,9 @@ export default class BleModule{
       * */
     getMacAddressFromIOS(data){
         let macAddressInAdvertising = data.advertising.kCBAdvDataManufacturerMacAddress;
+        if(!macAddressInAdvertising){  //为undefined代表此蓝牙广播信息里不包括Mac地址
+            return;
+        }
         macAddressInAdvertising = macAddressInAdvertising.replace("<","").replace(">","").replace(" ","");
         if(macAddressInAdvertising != undefined && macAddressInAdvertising != null && macAddressInAdvertising != '') {
             macAddressInAdvertising = this.swapEndianWithColon(macAddressInAdvertising);
