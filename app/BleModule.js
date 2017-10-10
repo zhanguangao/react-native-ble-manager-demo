@@ -139,6 +139,10 @@ export default class BleModule{
                         this.nofityServiceUUID.push(item.service);
                         this.nofityCharacteristicUUID.push(item.characteristic);
                     }
+                    if(item.properties.Read == 'Read'){
+                        this.readServiceUUID.push(item.service);
+                        this.readCharacteristicUUID.push(item.characteristic);
+                    }
                     if(item.properties.Write == 'Write'){
                         this.writeWithResponseServiceUUID.push(item.service);
                         this.writeWithResponseCharacteristicUUID.push(item.characteristic);
@@ -146,16 +150,16 @@ export default class BleModule{
                     if(item.properties.Write == 'WriteWithoutResponse'){
                         this.writeWithoutResponseServiceUUID.push(item.service);
                         this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
-                    }
-                    if(item.properties.Read == 'Read'){
-                        this.readServiceUUID.push(item.service);
-                        this.readCharacteristicUUID.push(item.characteristic);
-                    }
+                    }                    
                 }else{  //ios
                     for(let property of item.properties){
                         if(property == 'Notify'){
                             this.nofityServiceUUID.push(item.service);
                             this.nofityCharacteristicUUID.push(item.characteristic);
+                        }
+                        if(property == 'Read'){
+                            this.readServiceUUID.push(item.service);
+                            this.readCharacteristicUUID.push(item.characteristic);
                         }
                         if(property == 'Write'){
                             this.writeWithResponseServiceUUID.push(item.service);
@@ -164,11 +168,7 @@ export default class BleModule{
                         if(property == 'WriteWithoutResponse'){
                             this.writeWithoutResponseServiceUUID.push(item.service);
                             this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
-                        }
-                        if(property == 'Read'){
-                            this.readServiceUUID.push(item.service);
-                            this.readCharacteristicUUID.push(item.characteristic);
-                        }
+                        }                        
                     }
                 }
                
