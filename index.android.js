@@ -12,7 +12,7 @@ import {
   View
 } from 'react-native';
 
-import App from './app/Main';
+import App from './src/index';
 
 
 AppRegistry.registerComponent('BleManager', () => App);
