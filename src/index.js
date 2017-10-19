@@ -316,7 +316,7 @@ export default class App extends Component {
                             style={styles.buttonView} 
                             onPress={()=>{onPress(index)}} 
                             key={index}>
-                            <Text style={styles.buttonText}>{buttonText}（{item}）</Text>
+                            <Text style={styles.buttonText}>{buttonText} ({item})</Text>
                         </TouchableOpacity>
                     )
                 })}          
@@ -341,7 +341,7 @@ export default class App extends Component {
                                 activeOpacity={0.7} 
                                 style={styles.buttonView} 
                                 onPress={()=>{onPress(index)}}>
-                                <Text style={styles.buttonText}>{buttonText}（{item}）</Text>
+                                <Text style={styles.buttonText}>{buttonText} ({item})</Text>
                             </TouchableOpacity>
                         )
                     })}      
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     buttonView:{
         height:30,
         backgroundColor:'rgb(33, 150, 243)',
-        paddingHorizontal:15,
+        paddingHorizontal:10,
         borderRadius:5,
         justifyContent:"center",   
         alignItems:'center',

@@ -4,8 +4,5 @@
 # demo截图
 ![搜索](https://github.com/zhanguangao/react-native-ble-manager-demo/blob/master/screenshot/scan.jpg?raw=true)
 <br>
-![连接中]( https://github.com/zhanguangao/react-native-ble-manager-demo/blob/master/screenshot/connecting.jpg?raw=true)
-<br>
-![已连接](https://github.com/zhanguangao/react-native-ble-manager-demo/blob/master/screenshot/connected1.jpg?raw=true)
-<br>
-![已连接](https://github.com/zhanguangao/react-native-ble-manager-demo/blob/master/screenshot/connected2.jpg?raw=true)
+![已连接](https://github.com/zhanguangao/react-native-ble-manager-demo/blob/master/screenshot/connect.jpg?raw=true)
+
