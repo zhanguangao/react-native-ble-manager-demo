@@ -103,13 +103,21 @@ export default class BleModule{
         });
     }   
 
-    //检验UUID是否可用
-    checkUUID(uuid){
-        if(uuid == '' || uuid.length == 4 || uuid.length != 36){
-            return false;
-        }
-        return true;
-    }
+    /**
+     * Converts UUID to full 128bit.
+     * 
+     * @param {UUID} uuid 16bit, 32bit or 128bit UUID.
+     * @returns {UUID} 128bit UUID.
+     */
+    fullUUID(uuid) {
+        if (uuid.length === 4){
+            return '0000' + uuid.toUpperCase() + '-0000-1000-8000-00805F9B34FB'
+        }             
+        if (uuid.length === 8) {
+            return uuid.toUpperCase() + '-0000-1000-8000-00805F9B34FB'
+        }            
+        return uuid.toUpperCase()
+    }  
 
     initUUID(){
         this.readServiceUUID = [];
@@ -132,46 +140,45 @@ export default class BleModule{
         this.writeWithoutResponseCharacteristicUUID = [];
         this.nofityServiceUUID = [];
         this.nofityCharacteristicUUID = [];  
-        for(let item of peripheralInfo.characteristics){            
-            if(this.checkUUID(item.characteristic) && this.checkUUID(item.service)){
-                if(Platform.OS == 'android'){  
-                    if(item.properties.Notify == 'Notify'){
+        for(let item of peripheralInfo.characteristics){      
+            item.service = this.fullUUID(item.service);
+            item.characteristic = this.fullUUID(item.characteristic);
+            if(Platform.OS == 'android'){  
+                if(item.properties.Notify == 'Notify'){
+                    this.nofityServiceUUID.push(item.service);
+                    this.nofityCharacteristicUUID.push(item.characteristic);
+                }
+                if(item.properties.Read == 'Read'){
+                    this.readServiceUUID.push(item.service);
+                    this.readCharacteristicUUID.push(item.characteristic);
+                }
+                if(item.properties.Write == 'Write'){
+                    this.writeWithResponseServiceUUID.push(item.service);
+                    this.writeWithResponseCharacteristicUUID.push(item.characteristic);
+                }
+                if(item.properties.Write == 'WriteWithoutResponse'){
+                    this.writeWithoutResponseServiceUUID.push(item.service);
+                    this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
+                }                    
+            }else{  //ios
+                for(let property of item.properties){
+                    if(property == 'Notify'){
                         this.nofityServiceUUID.push(item.service);
                         this.nofityCharacteristicUUID.push(item.characteristic);
                     }
-                    if(item.properties.Read == 'Read'){
+                    if(property == 'Read'){
                         this.readServiceUUID.push(item.service);
                         this.readCharacteristicUUID.push(item.characteristic);
                     }
-                    if(item.properties.Write == 'Write'){
+                    if(property == 'Write'){
                         this.writeWithResponseServiceUUID.push(item.service);
                         this.writeWithResponseCharacteristicUUID.push(item.characteristic);
                     }
-                    if(item.properties.Write == 'WriteWithoutResponse'){
+                    if(property == 'WriteWithoutResponse'){
                         this.writeWithoutResponseServiceUUID.push(item.service);
                         this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
-                    }                    
-                }else{  //ios
-                    for(let property of item.properties){
-                        if(property == 'Notify'){
-                            this.nofityServiceUUID.push(item.service);
-                            this.nofityCharacteristicUUID.push(item.characteristic);
-                        }
-                        if(property == 'Read'){
-                            this.readServiceUUID.push(item.service);
-                            this.readCharacteristicUUID.push(item.characteristic);
-                        }
-                        if(property == 'Write'){
-                            this.writeWithResponseServiceUUID.push(item.service);
-                            this.writeWithResponseCharacteristicUUID.push(item.characteristic);
-                        }
-                        if(property == 'WriteWithoutResponse'){
-                            this.writeWithoutResponseServiceUUID.push(item.service);
-                            this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
-                        }                        
-                    }
+                    }                        
                 }
-               
             }
         }
         console.log('readServiceUUID',this.readServiceUUID);

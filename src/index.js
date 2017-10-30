@@ -26,6 +26,7 @@ export default class App extends Component {
             writeData:'',
             receiveData:'',
             readData:'',
+            isMonitoring:false
         }
         this.bluetoothReceiveData = [];  //蓝牙接收的数据缓存
         this.deviceMap = new Map();  
@@ -64,13 +65,13 @@ export default class App extends Component {
     }
 
      //扫描结束监听
-     handleStopScan=()=>{
+    handleStopScan=()=>{
         console.log('BleManagerStopScan:','Scanning is stopped');
         this.setState({scaning:false});
     }
 
      //搜索到一个新设备监听
-     handleDiscoverPeripheral=(data)=>{
+    handleDiscoverPeripheral=(data)=>{
         // console.log('BleManagerDiscoverPeripheral:', data);
         console.log(data.id,data.name);
         let id;  //蓝牙连接id
@@ -158,6 +159,10 @@ export default class App extends Component {
     }   
 
     scan(){
+        if(this.state.scaning){  //当前正在扫描中
+            BluetoothManager.stopScan();
+            this.setState({scaning:false});
+        }
         if(BluetoothManager.bluetoothState == 'on'){
             BluetoothManager.scan()
                 .then(()=>{
@@ -239,10 +244,12 @@ export default class App extends Component {
     notify=(index)=>{
         BluetoothManager.startNotification(index)
             .then(()=>{
+                this.setState({isMonitoring:true});
                 this.alert('开启成功');
             })
             .catch(err=>{
-                this.alert('开启失败');
+                this.setState({isMonitoring:false});
+                this.alert('开启失败');                
             })
     }
 
@@ -284,13 +291,13 @@ export default class App extends Component {
 
     renderFooter=()=>{
         return(
-            <View>
+            <View style={{marginBottom:30}}>
                 {this.state.isConnected?
                     <View>
                     {this.renderWriteView('写数据(write)：','发送',BluetoothManager.writeWithResponseCharacteristicUUID,this.write,this.state.writeData)}
                     {this.renderWriteView('写数据(writeWithoutResponse)：','发送',BluetoothManager.writeWithoutResponseCharacteristicUUID,this.writeWithoutResponse,this.state.writeData)}
                     {this.renderReceiveView('读取的数据：','读取',BluetoothManager.readCharacteristicUUID,this.read,this.state.readData)}
-                    {this.renderReceiveView('通知监听接收的数据：','开启通知',BluetoothManager.nofityCharacteristicUUID,this.notify,this.state.receiveData)}
+                    {this.renderReceiveView('通知监听接收的数据：'+`${this.state.isMonitoring?'监听已开启':'监听未开启'}`,'开启通知',BluetoothManager.nofityCharacteristicUUID,this.notify,this.state.receiveData)}
 
                     </View>                   
                     : <View></View>
@@ -366,7 +373,7 @@ export default class App extends Component {
                     ListFooterComponent={this.renderFooter}
                     keyExtractor={item=>item.id}
                     data={this.state.data}
-                    extraData={[this.state.isConnected,this.state.text,this.state.receiveData,this.state.readData,this.state.writeData]}
+                    extraData={[this.state.isConnected,this.state.text,this.state.receiveData,this.state.readData,this.state.writeData,this.state.isMonitoring,this.state.scaning]}
                     keyboardShouldPersistTaps='handled'
                 />   
             </View>
