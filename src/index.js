@@ -80,7 +80,7 @@ export default class App extends Component {
             macAddress = data.id;
             id = macAddress;
         }else{  
-            //ios连接时不需要用到Mac地址，但跨平台识别是否是同一设备时需要Mac地址
+            //ios连接时不需要用到Mac地址，但跨平台识别同一设备时需要Mac地址
             //如果广播携带有Mac地址，ios可通过广播0x18获取蓝牙Mac地址，
             macAddress = BluetoothManager.getMacAddressFromIOS(data);
             id = data.id;

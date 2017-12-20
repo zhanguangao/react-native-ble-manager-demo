@@ -6,7 +6,6 @@ import {
     NativeModules,
     NativeEventEmitter
 } from 'react-native';
-import { stringToBytes,bytesToString } from 'convert-string';
 import BleManager from 'react-native-ble-manager';
 
 const BleManagerModule = NativeModules.BleManager;
@@ -272,8 +271,7 @@ export default class BleModule{
      * Write with response to the specified characteristic, you need to call retrieveServices method before. 
      * */
 	write(data,index = 0) {
-        // data = this.addProtocol(data);        
-        data = stringToBytes(data);        
+        // data = this.addProtocol(data);   //在数据的头尾加入协议格式，如0A => FEFD010AFCFB，不同的蓝牙协议应作相应的更改
         return new Promise( (resolve, reject) =>{
             BleManager.write(this.peripheralId, this.writeWithResponseServiceUUID[index], this.writeWithResponseCharacteristicUUID[index], data)
                 .then(() => {
@@ -293,8 +291,6 @@ export default class BleModule{
      * Write without response to the specified characteristic, you need to call retrieveServices method before.  
      * */
     writeWithoutResponse(data,index = 0){
-        // data = this.addProtocol(data);   
-        data = stringToBytes(data);
         return new Promise( (resolve, reject) =>{
             BleManager.writeWithoutResponse(this.peripheralId, this.writeWithoutResponseServiceUUID[index], this.writeWithoutResponseCharacteristicUUID[index], data)
                 .then(() => {
@@ -435,6 +431,7 @@ export default class BleModule{
 
     /** 
      * 添加蓝牙协议格式，包头、数据长度、包尾，不同的蓝牙协议应作相应的更改  
+     * 0A => FEFD010AFCFB
      * */
     addProtocol(data){
         return 'FEFD' + this.getHexByteLength(data) + data + 'FCFB';
