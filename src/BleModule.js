@@ -155,7 +155,7 @@ export default class BleModule{
                     this.writeWithResponseServiceUUID.push(item.service);
                     this.writeWithResponseCharacteristicUUID.push(item.characteristic);
                 }
-                if(item.properties.Write == 'WriteWithoutResponse'){
+                if(item.properties.WriteWithoutResponse == 'WriteWithoutResponse'){
                     this.writeWithoutResponseServiceUUID.push(item.service);
                     this.writeWithoutResponseCharacteristicUUID.push(item.characteristic);
                 }                    
