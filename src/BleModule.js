@@ -359,14 +359,18 @@ export default class BleModule{
      * 蓝牙接收的信号强度 
      * Read the current value of the RSSI 
      * */
-	readRSSI() {
-	    BleManager.readRSSI()
-		    .then(() => {
-			    console.log('Current RSSI: ' + rssi);
-		    })
-		    .catch((error) => {
-                console.log(error);
-		    });
+	readRSSI(id) {
+        return new Promise( (resolve, reject) =>{
+            BleManager.readRSSI(id)
+                .then((rssi) => {
+                    console.log(id,'RSSI: ',rssi);
+                    resolve(rssi)
+                })
+                .catch((error) => {
+                    console.log(error);
+                    reject(error)
+                });
+        });
     }
 
     /** 
