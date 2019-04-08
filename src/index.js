@@ -7,7 +7,6 @@ import {
     FlatList,
     Platform,
     TextInput,
-    Dimensions,
     Alert,
 } from 'react-native'
 import BleModule from './BleModule';

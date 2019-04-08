@@ -1,23 +1,25 @@
 {
-	"name": "BleManager",
-	"version": "0.0.1",
-	"private": true,
-	"scripts": {
-		"start": "react-native start",
-		"test": "jest"
-	},
-	"dependencies": {
-		"react": "16.0.0-alpha.6",
-		"react-native": "^0.44.3",
-		"react-native-ble-manager": "https://github.com/zhanguangao/react-native-ble-manager.git"
-	},
-	"devDependencies": {
-		"babel-jest": "21.0.2",
-		"babel-preset-react-native": "4.0.0",
-		"jest": "21.1.0",
-		"react-test-renderer": "16.0.0-alpha.6"
-	},
-	"jest": {
-		"preset": "react-native"
-	}
+  "name": "BleManagerDemo",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node node_modules/react-native/local-cli/cli.js start",
+    "test": "jest"
+  },
+  "dependencies": {
+    "react": "16.8.3",
+    "react-native": "0.59.3",
+    "react-native-ble-manager": "https://github.com/innoveit/react-native-ble-manager.git"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.4.3",
+    "@babel/runtime": "^7.4.3",
+    "babel-jest": "^24.7.1",
+    "jest": "^24.7.1",
+    "metro-react-native-babel-preset": "^0.53.1",
+    "react-test-renderer": "16.8.3"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
 }
