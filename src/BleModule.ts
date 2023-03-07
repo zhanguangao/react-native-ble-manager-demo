@@ -1,14 +1,15 @@
 import {Platform, NativeModules, NativeEventEmitter} from 'react-native';
-import BleManager, {PeripheralInfo} from 'react-native-ble-manager';
+import BleManager, {Peripheral, PeripheralInfo} from 'react-native-ble-manager';
 import {BleEventType, BleState} from './type';
 import {byteToString} from './utils';
 
 const bleManagerEmitter = new NativeEventEmitter(NativeModules.BleManager);
 
 export default class BleModule {
-  isConnecting: boolean;
-  bleState: BleState;
+  /** 配对的蓝牙id */
   peripheralId: string;
+  /** 蓝牙打开状态 */
+  bleState: BleState;
 
   readServiceUUID!: any[];
   readCharacteristicUUID!: any[];
@@ -20,13 +21,8 @@ export default class BleModule {
   nofityCharacteristicUUID!: any[];
 
   constructor() {
-    // 蓝牙是否连接
-    this.isConnecting = false;
-    // 蓝牙打开状态
-    this.bleState = BleState.Off;
     this.peripheralId = '';
-
-    // initUUID
+    this.bleState = BleState.Off;
     this.initUUID();
   }
 
@@ -54,6 +50,7 @@ export default class BleModule {
   start() {
     BleManager.start({showAlert: false})
       .then(() => {
+        // 初始化成功后检查蓝牙状态
         this.checkState();
         console.log('Init the module success');
       })
@@ -68,12 +65,12 @@ export default class BleModule {
   }
 
   /** 扫描可用设备，5秒后结束 */
-  scan() {
+  scan(): Promise<void> {
     return new Promise((resolve, reject) => {
       BleManager.scan([], 5, true)
         .then(() => {
           console.log('Scan started');
-          resolve(null);
+          resolve();
         })
         .catch(error => {
           console.log('Scan started fail', error);
@@ -83,12 +80,12 @@ export default class BleModule {
   }
 
   /** 停止扫描 */
-  stopScan() {
+  stopScan(): Promise<void> {
     return new Promise((resolve, reject) => {
       BleManager.stopScan()
         .then(() => {
           console.log('Scan stopped');
-          resolve(null);
+          resolve();
         })
         .catch(error => {
           console.log('Scan stopped fail', error);
@@ -98,7 +95,7 @@ export default class BleModule {
   }
 
   /** 返回扫描到的蓝牙设备 */
-  getDiscoveredPeripherals() {
+  getDiscoveredPeripherals(): Promise<Peripheral[]> {
     return new Promise((resolve, reject) => {
       BleManager.getDiscoveredPeripherals()
         .then(peripheralsArray => {
@@ -112,12 +109,7 @@ export default class BleModule {
     });
   }
 
-  /**
-   * Converts UUID to full 128bit.
-   *
-   * @param {UUID} uuid 16bit, 32bit or 128bit UUID.
-   * @returns {UUID} 128bit UUID.
-   */
+  /** 将16、32、128位 UUID 转换为128位大写的 UUID */
   fullUUID(uuid: string) {
     if (uuid.length === 4) {
       return '0000' + uuid.toUpperCase() + '-0000-1000-8000-00805F9B34FB';
@@ -209,7 +201,6 @@ export default class BleModule {
    * 在 iOS 中，尝试连接到蓝牙设备不会超时，因此如果您不希望出现这种情况，则可能需要明确设置计时器。
    */
   connect(id: string): Promise<PeripheralInfo> {
-    this.isConnecting = true; //当前蓝牙正在连接中
     return new Promise((resolve, reject) => {
       BleManager.connect(id)
         .then(() => {
@@ -226,10 +217,6 @@ export default class BleModule {
         .catch(error => {
           console.log('Connected fail', error);
           reject(error);
-        })
-        .finally(() => {
-          // 当前蓝牙连接结束
-          this.isConnecting = false;
         });
     });
   }
@@ -246,7 +233,7 @@ export default class BleModule {
   }
 
   /** 打开通知 */
-  startNotification(index = 0) {
+  startNotification(index = 0): Promise<void> {
     return new Promise((resolve, reject) => {
       BleManager.startNotification(
         this.peripheralId,
@@ -255,7 +242,7 @@ export default class BleModule {
       )
         .then(() => {
           console.log('Notification started');
-          resolve(null);
+          resolve();
         })
         .catch(error => {
           console.log('Start notification fail', error);
@@ -265,7 +252,7 @@ export default class BleModule {
   }
 
   /** 关闭通知 */
-  stopNotification(index = 0) {
+  stopNotification(index = 0): Promise<void> {
     return new Promise((resolve, reject) => {
       BleManager.stopNotification(
         this.peripheralId,
@@ -274,7 +261,7 @@ export default class BleModule {
       )
         .then(() => {
           console.log('Stop notification success!');
-          resolve(null);
+          resolve();
         })
         .catch(error => {
           console.log('Stop notification fail', error);
@@ -284,9 +271,7 @@ export default class BleModule {
   }
 
   /** 写数据到蓝牙 */
-  write(data: any, index = 0) {
-    // 在数据的头尾加入协议格式，如0A => FEFD010AFCFB，不同的蓝牙协议应作相应的更改
-    // data = addProtocol(data);
+  write(data: any, index = 0): Promise<void> {
     return new Promise((resolve, reject) => {
       BleManager.write(
         this.peripheralId,
@@ -296,7 +281,7 @@ export default class BleModule {
       )
         .then(() => {
           console.log('Write success', data.toString());
-          resolve(null);
+          resolve();
         })
         .catch(error => {
           console.log('Write failed', data);
@@ -306,7 +291,7 @@ export default class BleModule {
   }
 
   /** 写数据到蓝牙，没有响应 */
-  writeWithoutResponse(data: any, index = 0) {
+  writeWithoutResponse(data: any, index = 0): Promise<void> {
     return new Promise((resolve, reject) => {
       BleManager.writeWithoutResponse(
         this.peripheralId,
@@ -316,7 +301,7 @@ export default class BleModule {
       )
         .then(() => {
           console.log('Write success', data);
-          resolve(null);
+          resolve();
         })
         .catch(error => {
           console.log('Write failed', data);
@@ -326,7 +311,7 @@ export default class BleModule {
   }
 
   /** 读取指定特征的数据 */
-  read(index = 0) {
+  read(index = 0): Promise<string> {
     return new Promise((resolve, reject) => {
       BleManager.read(
         this.peripheralId,
@@ -346,7 +331,7 @@ export default class BleModule {
   }
 
   /** 返回已连接的蓝牙设备 */
-  getConnectedPeripherals() {
+  getConnectedPeripherals(): Promise<Peripheral[]> {
     return new Promise((resolve, reject) => {
       BleManager.getConnectedPeripherals([])
         .then(peripheralsArray => {
@@ -354,23 +339,23 @@ export default class BleModule {
           resolve(peripheralsArray);
         })
         .catch(error => {
-          console.log('Get connected peripherals fail');
+          console.log('Get connected peripherals fail', error);
           reject(error);
         });
     });
   }
 
   /** 判断指定设备是否已连接 */
-  isPeripheralConnected() {
+  isPeripheralConnected(): Promise<boolean> {
     return new Promise((resolve, reject) => {
       BleManager.isPeripheralConnected(this.peripheralId, [])
         .then(isConnected => {
+          console.log(
+            isConnected
+              ? 'Peripheral is connected'
+              : 'Peripheral is NOT connected',
+          );
           resolve(isConnected);
-          if (isConnected) {
-            console.log('Peripheral is connected');
-          } else {
-            console.log('Peripheral is NOT connected');
-          }
         })
         .catch(error => {
           console.log('Get peripheral is connected fail', error);
@@ -379,38 +364,8 @@ export default class BleModule {
     });
   }
 
-  /** 读取蓝牙接收的信号强度 */
-  readRSSI(id: string) {
-    return new Promise((resolve, reject) => {
-      BleManager.readRSSI(id)
-        .then(rssi => {
-          console.log(id, 'RSSI', rssi);
-          resolve(rssi);
-        })
-        .catch(error => {
-          console.log('Read RSSI fail', error);
-          reject(error);
-        });
-    });
-  }
-
-  /** (Android only) 打开蓝牙 */
-  enableBluetooth() {
-    return new Promise((resolve, reject) => {
-      BleManager.enableBluetooth()
-        .then(() => {
-          console.log('The bluetooh is already enabled or the user confirm');
-          resolve(null);
-        })
-        .catch(error => {
-          console.log('The user refuse to enable bluetooth', error);
-          reject(error);
-        });
-    });
-  }
-
   /** (Android only) 获取已绑定的设备 */
-  getBondedPeripherals() {
+  getBondedPeripherals(): Promise<Peripheral[]> {
     return new Promise((resolve, reject) => {
       BleManager.getBondedPeripherals()
         .then(bondedPeripheralsArray => {
@@ -424,18 +379,25 @@ export default class BleModule {
     });
   }
 
+  /** (Android only) 打开蓝牙 */
+  enableBluetooth() {
+    BleManager.enableBluetooth()
+      .then(() => {
+        console.log('The bluetooh is already enabled or the user confirm');
+      })
+      .catch(error => {
+        console.log('The user refuse to enable bluetooth', error);
+      });
+  }
+
   /** (Android only) 从缓存列表中删除断开连接的外围设备。它在设备关闭时很有用，因为它会在再次打开时被重新发现 */
   removePeripheral() {
-    return new Promise((resolve, reject) => {
-      BleManager.removePeripheral(this.peripheralId)
-        .then(() => {
-          console.log('Remove peripheral success');
-          resolve(null);
-        })
-        .catch(error => {
-          console.log('Remove peripheral fail', error);
-          reject(error);
-        });
-    });
+    BleManager.removePeripheral(this.peripheralId)
+      .then(() => {
+        console.log('Remove peripheral success');
+      })
+      .catch(error => {
+        console.log('Remove peripheral fail', error);
+      });
   }
 }
