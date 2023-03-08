@@ -5822,7 +5822,7 @@ react-is@^17.0.1:
 
 "react-native-ble-manager@https://github.com/zhanguangao/react-native-ble-manager.git":
   version "8.8.0"
-  resolved "https://github.com/zhanguangao/react-native-ble-manager.git#bf20bfb8cee181fc152f51da1d369a5f3061e1ae"
+  resolved "https://github.com/zhanguangao/react-native-ble-manager.git#3923e5e249df2a45681871980de53da66f6bee92"
 
 react-native-codegen@^0.71.5:
   version "0.71.5"
